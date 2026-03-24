@@ -12,10 +12,11 @@ struct MainPage: View {
         ZStack{
             Color(red: 28/255, green: 28/255, blue: 28/255)
                 .ignoresSafeArea()
-            Text("Пусто").foregroundColor(.white)
-        }
-        .withLogoutButton(general: general) {
-            
-        }
+        
+            Text("Пусто")
+                .foregroundColor(.white)
+
+    }
+    
     }
 }

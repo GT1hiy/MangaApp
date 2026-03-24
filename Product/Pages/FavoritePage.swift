@@ -12,10 +12,17 @@ struct FavoritePage: View {
         ZStack{
             Color(red: 28/255, green: 28/255, blue: 28/255)
                 .ignoresSafeArea()
-            Text("Пусто").foregroundColor(.white)
+        
+        if general.exit == true {
+            Text("Пусто")
+                .foregroundColor(.white)
+        } else {
+            Text("Войдите в аккаунт")
+                .foregroundColor(.white)
+                .multilineTextAlignment(.center)
+                .padding()
         }
-        .withLogoutButton(general: general) {
-            
-        }
+    }
+    
     }
 }

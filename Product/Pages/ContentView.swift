@@ -3,6 +3,7 @@ import SwiftUI
 @Observable class regInfo {
     var email = ""
     var password = ""
+    var repeatPassword = ""
     var showingAlert = false
     var alertMessage = ""
 }
@@ -86,7 +87,7 @@ struct RegPage: View {
                 .padding(.top, 20)
                 
                 Button("У меня еще нет аккаунта"){
-                    
+                    general.reg = true
                 }
                 .foregroundStyle(Color(red: 239/255, green: 191/255, blue: 4/255))
                 .shadow(color: Color(red: 239/255, green: 191/255, blue: 4/255).opacity(0.5), radius: 10, x: 0, y: 0)
@@ -112,7 +113,6 @@ struct RegPage: View {
             .padding(.horizontal, 50)
             .padding(.top, -105)
         }
-        .withLogoutButton(general: general) { }
         .alert(isPresented: $info.showingAlert) { 
             Alert(
                 title: Text("Вход"),

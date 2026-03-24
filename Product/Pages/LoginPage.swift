@@ -15,7 +15,7 @@ struct LoginPage: View {
                 .ignoresSafeArea()
             VStack {
                 Text("Hey, \(general.userEmail)!")
-                    .foregroundColor(.black)
+                    .foregroundColor(.white)
                     .font(.custom("HelveticaNeue-Medium", size: 40))
                     .bold()
             }
@@ -34,9 +34,6 @@ struct LoginPage: View {
                     general.welcomeMessage = ""
                 }
             )
-        }
-        .withLogoutButton(general: general) {
-            
         }
     }
 } 
