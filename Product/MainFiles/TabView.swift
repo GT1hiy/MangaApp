@@ -8,15 +8,16 @@
 import SwiftUI
 
 struct MainTabView: View {
-    @State var general = General()
+    @StateObject var general = General()
     @State private var showLogoutAlert = false
+    @StateObject private var favoriteManager = FavoriteManager.shared
     
     var body: some View {
         ZStack(alignment: .bottom) {
             Group {
                 switch general.selectedTab {
                 case 0:
-                    MangaFeedView()
+                    MangaFeedView(general: general)
                 case 1:
                     FavoritePage(general: general)
                 case 2:
@@ -44,6 +45,7 @@ struct MainTabView: View {
                  .padding(.horizontal, 12)
                  .padding(.bottom, -6)
                  .frame(height: 52)
+                 .preferredColorScheme(.dark)
             
             HStack(spacing: 0) {
                 Button(action: { general.selectedTab = 0 }) {

@@ -1,11 +1,11 @@
 import SwiftUI
 
-@Observable class General {
-    var selectedTab = 0
-    var reg = false
-    var exit = false
-    var userEmail = ""
-    var welcomeMessage = ""
+class General: ObservableObject {
+    @Published var selectedTab = 0
+    @Published var reg = false
+    @Published var exit = false
+    @Published var userEmail = ""
+    @Published var welcomeMessage = ""
     
     func exitFromAcc() {
         exit = false

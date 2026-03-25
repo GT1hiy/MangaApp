@@ -9,6 +9,11 @@ import SwiftUI
 
 @main
 struct ProductApp: App {
+    init() {
+        // Отключаем кнопку Cancel во всех поисковых полях
+        UISearchBar.appearance().showsCancelButton = false
+    }
+    
     var body: some Scene {
         WindowGroup {
             MainTabView()

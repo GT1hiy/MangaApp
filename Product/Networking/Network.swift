@@ -10,6 +10,8 @@ class MangaService: ObservableObject {
     
     private var currentPage = 1
     private var currentTask: Task<Void, Never>?
+    private var retryCount = 0
+    private let maxRetries = 2
     
     func loadMangas(reset: Bool = false) {
         currentTask?.cancel()
@@ -19,6 +21,7 @@ class MangaService: ObservableObject {
             mangas = []
             hasMore = true
             errorMessage = nil
+            retryCount = 0
         }
         
         guard !isLoading && hasMore else { return }
@@ -55,7 +58,7 @@ class MangaService: ObservableObject {
             request.httpMethod = "POST"
             request.setValue("application/json", forHTTPHeaderField: "Content-Type")
             request.httpBody = try? JSONSerialization.data(withJSONObject: ["query": query])
-            request.timeoutInterval = 30
+            request.timeoutInterval = 15
             
             do {
                 let (data, _) = try await URLSession.shared.data(for: request)
@@ -73,14 +76,27 @@ class MangaService: ObservableObject {
                 self.hasMore = result.data.Page.pageInfo?.hasNextPage ?? false
                 self.currentPage += 1
                 self.isLoading = false
+                self.retryCount = 0
+                self.errorMessage = nil
                 
             } catch is CancellationError {
                 self.isLoading = false
                 return
             } catch {
                 print("Ошибка: \(error)")
-                self.errorMessage = "Не удалось загрузить. Проверь интернет."
-                self.isLoading = false
+                
+                if retryCount < maxRetries {
+                    retryCount += 1
+                    print("Повторная попытка \(retryCount)/\(maxRetries)...")
+                    self.isLoading = false
+                    try? await Task.sleep(nanoseconds: 2_000_000_000)
+                    await self.loadMangas(reset: reset)
+                } else {
+                    if self.mangas.isEmpty {
+                        self.errorMessage = "Не удалось загрузить. Проверь интернет."
+                    }
+                    self.isLoading = false
+                }
             }
         }
     }
@@ -93,7 +109,7 @@ class MangaService: ObservableObject {
         
         var request = URLRequest(url: url)
         request.setValue("MangaReader/1.0 (iOS)", forHTTPHeaderField: "User-Agent")
-        request.timeoutInterval = 30
+        request.timeoutInterval = 15
         
         do {
             let (data, _) = try await URLSession.shared.data(for: request)
@@ -144,15 +160,12 @@ struct Manga: Codable, Identifiable {
     let volumes: Int?
     
     var displayTitle: String {
-        // Приоритет: русское название (если есть в переводе) -> английское -> ромадзи
-        return title.english ?? title.romaji ?? "Unknown"
+        title.english ?? title.romaji ?? "Unknown"
     }
     
     var displayDescription: String {
         guard let desc = description else { return "Описание отсутствует" }
-        // Убираем HTML теги
         let cleanDesc = desc.replacingOccurrences(of: "<[^>]+>", with: "", options: .regularExpression)
-        // Можно добавить перевод через API, но для простоты оставляем английский
         return cleanDesc.isEmpty ? "Описание отсутствует" : cleanDesc
     }
     

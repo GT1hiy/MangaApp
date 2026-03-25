@@ -79,11 +79,14 @@ struct MangaRowView: View {
                 .lineLimit(3)
             
             HStack(spacing: 12) {
+                // Исправляем отображение статуса - теперь текст помещается полностью
                 Text(manga.displayStatus)
                     .font(.system(size: 11, weight: .medium))
                     .foregroundColor(Color(red: 239/255, green: 191/255, blue: 4/255))
+                    .lineLimit(1)
+                    .fixedSize(horizontal: true, vertical: false)
                 
-                if let chapters = manga.chapters {
+                if let chapters = manga.chapters, chapters > 0 {
                     HStack(spacing: 4) {
                         Image(systemName: "book.pages")
                             .font(.system(size: 10))
@@ -94,7 +97,7 @@ struct MangaRowView: View {
                     }
                 }
                 
-                if let volumes = manga.volumes {
+                if let volumes = manga.volumes, volumes > 0 {
                     HStack(spacing: 4) {
                         Image(systemName: "books.vertical")
                             .font(.system(size: 10))
@@ -110,6 +113,7 @@ struct MangaRowView: View {
     
     private var favoriteButton: some View {
         Button(action: {
+            // Исправляем условие - проверяем general.exit (true - авторизован)
             if general.exit {
                 toggleFavorite()
             } else {

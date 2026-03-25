@@ -26,7 +26,7 @@ struct FavoritePage: View {
                 
                 if !general.exit {
                     VStack(spacing: 16) {
-                        Image(systemName: "person.slash")
+                        Image(systemName: "heart.slash")
                             .font(.system(size: 60))
                             .foregroundColor(.gray)
                         Text("Войдите в аккаунт")

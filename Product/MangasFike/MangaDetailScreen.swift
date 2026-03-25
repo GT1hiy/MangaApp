@@ -109,6 +109,7 @@ struct MangaDetailView: View {
             Spacer()
             
             Button(action: {
+                // Исправляем условие - проверяем general.exit (true - авторизован)
                 if general.exit {
                     toggleFavorite()
                 } else {
@@ -133,7 +134,7 @@ struct MangaDetailView: View {
                     .foregroundColor(Color(red: 239/255, green: 191/255, blue: 4/255))
             }
             
-            if let chapters = manga.chapters {
+            if let chapters = manga.chapters, chapters > 0 {
                 HStack(spacing: 6) {
                     Image(systemName: "book.pages")
                         .font(.system(size: 14))
@@ -144,7 +145,7 @@ struct MangaDetailView: View {
                 }
             }
             
-            if let volumes = manga.volumes {
+            if let volumes = manga.volumes, volumes > 0 {
                 HStack(spacing: 6) {
                     Image(systemName: "books.vertical")
                         .font(.system(size: 14))
