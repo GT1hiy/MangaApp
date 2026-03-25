@@ -12,6 +12,8 @@ struct MangaFeedView: View {
             .navigationTitle("Манга")
             .navigationBarTitleDisplayMode(.large)
             .preferredColorScheme(.dark)
+            .toolbarBackground(.hidden, for: .navigationBar) 
+            .toolbar(.hidden, for: .navigationBar)
         }
         .task {
             service.loadMangas(reset: true)

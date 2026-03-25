@@ -16,7 +16,7 @@ struct MainTabView: View {
             Group {
                 switch general.selectedTab {
                 case 0:
-                    MainPage(general: general)
+                    MangaFeedView()
                 case 1:
                     FavoritePage(general: general)
                 case 2:

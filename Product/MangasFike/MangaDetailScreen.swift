@@ -94,7 +94,9 @@ struct MangaDetailView: View {
                             .foregroundColor(.gray)
                             .lineSpacing(4)
                         
-                        // Кнопка "Читать"
+                        Spacer(minLength: 80)
+                        
+                        // Кнопка "Читать" — поднял выше
                         Button(action: {
                             Task {
                                 await openReader()
@@ -127,7 +129,7 @@ struct MangaDetailView: View {
                             .shadow(color: Color(red: 239/255, green: 191/255, blue: 4/255).opacity(0.5), radius: 8, x: 0, y: 4)
                         }
                         .disabled(isSearching)
-                        .padding(.top, 20)
+                        .padding(.bottom, 65)
                         
                         if let error = searchError {
                             Text(error)
@@ -137,7 +139,6 @@ struct MangaDetailView: View {
                         }
                     }
                     .padding(.horizontal)
-                    .padding(.bottom, 30)
                 }
             }
         }
@@ -153,14 +154,20 @@ struct MangaDetailView: View {
         isSearching = true
         searchError = nil
         
+        let searchTitle = manga.title.english ?? manga.title.romaji ?? manga.displayTitle
+        
         let service = MangaService()
-        if let id = await service.searchMangaDexId(title: manga.displayTitle) {
+        if let id = await service.searchMangaDexId(title: searchTitle) {
             mangaDexId = id
             showingReader = true
         } else {
-            searchError = "Не удалось найти эту мангу в MangaDex. Попробуйте другое название."
+            searchError = "Не удалось найти эту мангу в MangaDex"
         }
         
         isSearching = false
     }
+}
+
+#Preview {
+    MainTabView()
 }
