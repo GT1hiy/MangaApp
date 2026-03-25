@@ -1,0 +1,15 @@
+{
+  "originHash" : "592a381d203678ded62ebc264bafe3ead94703684020fc26cc0b6435e9cfa45e",
+  "pins" : [
+    {
+      "identity" : "mangadexlib",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/JRomainG/MangaDexLib.git",
+      "state" : {
+        "branch" : "master",
+        "revision" : "deb8ba574d8d9c7e39e154ec63b1db40df39024a"
+      }
+    }
+  ],
+  "version" : 3
+}

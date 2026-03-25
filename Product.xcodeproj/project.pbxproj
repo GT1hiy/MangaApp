@@ -195,6 +195,9 @@
 			);
 			mainGroup = 3CD0604A2F66BD63009E197C;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				3CD061C32F74391B009E197C /* XCRemoteSwiftPackageReference "MangaDexLib" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 3CD060542F66BD63009E197C /* Products */;
 			projectDirPath = "";
@@ -554,6 +557,17 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		3CD061C32F74391B009E197C /* XCRemoteSwiftPackageReference "MangaDexLib" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/JRomainG/MangaDexLib.git";
+			requirement = {
+				branch = master;
+				kind = branch;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
 	};
 	rootObject = 3CD0604B2F66BD63009E197C /* Project object */;
 }
