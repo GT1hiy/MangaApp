@@ -2,6 +2,20 @@ import SwiftUI
 
 struct MangaFeedView: View {
     @StateObject private var service = MangaService()
+    @State private var searchText = ""
+    @FocusState private var isSearchFocused: Bool
+    
+    var filteredMangas: [Manga] {
+        if searchText.isEmpty {
+            return service.mangas
+        } else {
+            return service.mangas.filter { manga in
+                manga.displayTitle.localizedCaseInsensitiveContains(searchText) ||
+                manga.title.english?.localizedCaseInsensitiveContains(searchText) == true ||
+                manga.title.romaji?.localizedCaseInsensitiveContains(searchText) == true
+            }
+        }
+    }
     
     var body: some View {
         NavigationStack {
@@ -12,8 +26,11 @@ struct MangaFeedView: View {
             .navigationTitle("Манга")
             .navigationBarTitleDisplayMode(.large)
             .preferredColorScheme(.dark)
-            .toolbarBackground(.hidden, for: .navigationBar) 
-            .toolbar(.hidden, for: .navigationBar)
+            .toolbarBackground(.hidden, for: .navigationBar)
+            .searchable(text: $searchText, placement: .navigationBarDrawer(displayMode: .always), prompt: "Поиск манги")
+            .onSubmit(of: .search) {
+                isSearchFocused = false
+            }
         }
         .task {
             service.loadMangas(reset: true)
@@ -63,16 +80,16 @@ struct MangaFeedView: View {
     private var mangaListView: some View {
         ScrollView {
             LazyVStack(spacing: 16) {
-                ForEach(service.mangas) { manga in
-                    MangaRowView(manga: manga)
+                ForEach(filteredMangas) { manga in
+                    MangaRowView(manga: manga, general: General())
                         .onAppear {
-                            if manga.id == service.mangas.last?.id && service.hasMore && !service.isLoading {
+                            if manga.id == service.mangas.last?.id && service.hasMore && !service.isLoading && searchText.isEmpty {
                                 service.loadMangas(reset: false)
                             }
                         }
                 }
                 
-                if service.isLoading && !service.mangas.isEmpty {
+                if service.isLoading && !service.mangas.isEmpty && searchText.isEmpty {
                     ProgressView()
                         .tint(Color(red: 239/255, green: 191/255, blue: 4/255))
                         .padding()

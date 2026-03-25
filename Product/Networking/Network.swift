@@ -85,134 +85,34 @@ class MangaService: ObservableObject {
         }
     }
     
-    // MARK: - Поиск ID манги в MangaDex
     func searchMangaDexId(title: String) async -> String? {
-        let searchTitle = title.lowercased()
-        let encodedTitle = searchTitle.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
-        
-        let apiUrls = [
-            "https://api.mangadex.org",
-            "https://api.mangadex.cc",
-            "https://api.mangadex.network"
-        ]
-        
-        for apiUrl in apiUrls {
-            let urlString = "\(apiUrl)/manga?title=\(encodedTitle)&limit=5"
-            
-            guard let url = URL(string: urlString) else { continue }
-            
-            var request = URLRequest(url: url)
-            request.setValue("MangaReader/1.0 (iOS)", forHTTPHeaderField: "User-Agent")
-            request.timeoutInterval = 10
-            
-            do {
-                let (data, response) = try await URLSession.shared.data(for: request)
-                
-                if let httpResponse = response as? HTTPURLResponse {
-                    print("Поиск через \(apiUrl): статус \(httpResponse.statusCode)")
-                }
-                
-                let responseString = String(data: data, encoding: .utf8) ?? ""
-                
-                if responseString.contains("<!DOCTYPE html>") || responseString.contains("html") {
-                    print("API вернул HTML, пробуем другое зеркало")
-                    continue
-                }
-                
-                struct SearchResponse: Codable {
-                    let data: [MangaDexManga]
-                }
-                
-                struct MangaDexManga: Codable {
-                    let id: String
-                    let attributes: MangaDexAttributes
-                }
-                
-                struct MangaDexAttributes: Codable {
-                    let title: [String: String]
-                }
-                
-                let searchResult = try JSONDecoder().decode(SearchResponse.self, from: data)
-                
-                for manga in searchResult.data {
-                    for (lang, mangaTitle) in manga.attributes.title {
-                        if mangaTitle.lowercased() == searchTitle {
-                            print("Найден ID: \(manga.id) через язык \(lang)")
-                            return manga.id
-                        }
-                    }
-                }
-                
-                if let firstId = searchResult.data.first?.id {
-                    print("Взяли первый результат: \(firstId)")
-                    return firstId
-                }
-                
-            } catch {
-                print("Ошибка через \(apiUrl): \(error)")
-                continue
-            }
-        }
-        
-        return await searchMangaDexIdSimple(title: searchTitle)
-    }
-    
-    private func searchMangaDexIdSimple(title: String) async -> String? {
         let encodedTitle = title.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
+        let urlString = "https://api.mangadex.org/manga?title=\(encodedTitle)&limit=1"
         
-        let apiUrls = [
-            "https://api.mangadex.org",
-            "https://api.mangadex.cc"
-        ]
+        guard let url = URL(string: urlString) else { return nil }
         
-        for apiUrl in apiUrls {
-            let urlString = "\(apiUrl)/manga?limit=50"
+        var request = URLRequest(url: url)
+        request.setValue("MangaReader/1.0 (iOS)", forHTTPHeaderField: "User-Agent")
+        request.timeoutInterval = 30
+        
+        do {
+            let (data, _) = try await URLSession.shared.data(for: request)
             
-            guard let url = URL(string: urlString) else { continue }
-            
-            var request = URLRequest(url: url)
-            request.setValue("MangaReader/1.0 (iOS)", forHTTPHeaderField: "User-Agent")
-            request.timeoutInterval = 10
-            
-            do {
-                let (data, _) = try await URLSession.shared.data(for: request)
-                
-                struct SearchResponse: Codable {
-                    let data: [MangaItem]
-                }
-                
-                struct MangaItem: Codable {
-                    let id: String
-                    let attributes: MangaAttributes
-                }
-                
-                struct MangaAttributes: Codable {
-                    let title: [String: String]
-                }
-                
-                let searchResult = try JSONDecoder().decode(SearchResponse.self, from: data)
-                
-                for manga in searchResult.data {
-                    for (_, mangaTitle) in manga.attributes.title {
-                        if mangaTitle.lowercased().contains(title) || title.contains(mangaTitle.lowercased()) {
-                            print("Найден ID через частичное совпадение: \(manga.id)")
-                            return manga.id
-                        }
-                    }
-                }
-                
-                if let firstId = searchResult.data.first?.id {
-                    print("Взяли первый ID из списка: \(firstId)")
-                    return firstId
-                }
-                
-            } catch {
-                print("Ошибка простого поиска через \(apiUrl): \(error)")
-                continue
+            struct SearchResponse: Codable {
+                let data: [MangaDexManga]
             }
+            
+            struct MangaDexManga: Codable {
+                let id: String
+            }
+            
+            let response = try JSONDecoder().decode(SearchResponse.self, from: data)
+            return response.data.first?.id
+            
+        } catch {
+            print("Ошибка поиска ID: \(error)")
+            return nil
         }
-        
-        return nil
     }
 }
 
@@ -244,11 +144,16 @@ struct Manga: Codable, Identifiable {
     let volumes: Int?
     
     var displayTitle: String {
-        title.english ?? title.romaji ?? "Unknown"
+        // Приоритет: русское название (если есть в переводе) -> английское -> ромадзи
+        return title.english ?? title.romaji ?? "Unknown"
     }
     
     var displayDescription: String {
-        description?.replacingOccurrences(of: "<[^>]+>", with: "", options: .regularExpression) ?? "No description"
+        guard let desc = description else { return "Описание отсутствует" }
+        // Убираем HTML теги
+        let cleanDesc = desc.replacingOccurrences(of: "<[^>]+>", with: "", options: .regularExpression)
+        // Можно добавить перевод через API, но для простоты оставляем английский
+        return cleanDesc.isEmpty ? "Описание отсутствует" : cleanDesc
     }
     
     var displayStatus: String {
@@ -257,6 +162,7 @@ struct Manga: Codable, Identifiable {
         case "FINISHED": return "Завершено"
         case "HIATUS": return "На паузе"
         case "CANCELLED": return "Отменено"
+        case "NOT_YET_RELEASED": return "Скоро выйдет"
         default: return status ?? "Неизвестно"
         }
     }
