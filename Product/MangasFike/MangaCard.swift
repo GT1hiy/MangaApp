@@ -14,6 +14,7 @@ struct MangaRowView: View {
                 Spacer()
                 favoriteButton
             }
+            .frame(height: 160) // Увеличил высоту для дополнительной строки
             .padding(16)
             .background(cardBackground)
             .overlay(cardOverlay)
@@ -68,24 +69,34 @@ struct MangaRowView: View {
     
     private var infoView: some View {
         VStack(alignment: .leading, spacing: 8) {
+            // Заголовок - фиксированная высота
             Text(manga.displayTitle)
                 .font(.system(size: 16, weight: .semibold))
                 .foregroundColor(.white)
                 .lineLimit(2)
+                .frame(height: 44, alignment: .top)
             
+            // Описание - фиксированная высота
             Text(manga.displayDescription)
                 .font(.system(size: 12))
                 .foregroundColor(.gray)
-                .lineLimit(3)
+                .lineLimit(2)
+                .frame(height: 32, alignment: .top)
             
-            HStack(spacing: 12) {
-                // Исправляем отображение статуса - теперь текст помещается полностью
+            // Первая строка со статусом
+            HStack(spacing: 8) {
+                Image(systemName: "info.circle")
+                    .font(.system(size: 10))
+                    .foregroundColor(Color(red: 239/255, green: 191/255, blue: 4/255))
                 Text(manga.displayStatus)
                     .font(.system(size: 11, weight: .medium))
                     .foregroundColor(Color(red: 239/255, green: 191/255, blue: 4/255))
-                    .lineLimit(1)
-                    .fixedSize(horizontal: true, vertical: false)
-                
+            }
+            .frame(height: 20, alignment: .leading)
+            
+            // Вторая строка с количеством глав и томов
+            HStack(spacing: 16) {
+                // Количество глав
                 if let chapters = manga.chapters, chapters > 0 {
                     HStack(spacing: 4) {
                         Image(systemName: "book.pages")
@@ -97,6 +108,7 @@ struct MangaRowView: View {
                     }
                 }
                 
+                // Количество томов
                 if let volumes = manga.volumes, volumes > 0 {
                     HStack(spacing: 4) {
                         Image(systemName: "books.vertical")
@@ -108,12 +120,13 @@ struct MangaRowView: View {
                     }
                 }
             }
+            .frame(height: 20, alignment: .leading)
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
     
     private var favoriteButton: some View {
         Button(action: {
-            // Исправляем условие - проверяем general.exit (true - авторизован)
             if general.exit {
                 toggleFavorite()
             } else {
@@ -125,6 +138,8 @@ struct MangaRowView: View {
                 .foregroundColor(isFavorite ? .red : .gray)
         }
         .buttonStyle(PlainButtonStyle())
+        .frame(width: 30, height: 30)
+        .padding(.top, 8)
     }
     
     private var cardBackground: some View {
@@ -157,4 +172,8 @@ struct MangaRowView: View {
         }
         isFavorite.toggle()
     }
+}
+
+#Preview{
+    MangaFeedView(general: General())
 }

@@ -28,6 +28,11 @@ class FavoriteManager: ObservableObject {
         return favorites.contains { $0.id == mangaId }
     }
     
+    func clearFavorites() {
+        favorites.removeAll()
+        saveFavorites()
+    }
+    
     private func saveFavorites() {
         do {
             let encoder = JSONEncoder()

@@ -4,8 +4,9 @@ struct MangaFeedView: View {
     let general: General
     @StateObject private var service = MangaService()
     @State private var searchText = ""
-    @FocusState private var isSearchFocused: Bool
+    @State private var isSearchActive = false
     @State private var keyboardHeight: CGFloat = 0
+    @FocusState private var isTextFieldFocused: Bool
     
     var filteredMangas: [Manga] {
         if searchText.isEmpty {
@@ -21,55 +22,101 @@ struct MangaFeedView: View {
     
     var body: some View {
         NavigationStack {
-            ZStack(alignment: .bottom) {
-                backgroundView
-                contentView
+            ZStack(alignment: .top) {
+                // Фон
+                Color(red: 28/255, green: 28/255, blue: 28/255)
+                    .ignoresSafeArea()
+                    .brightness(isSearchActive ? -0.15 : 0)
+                    .animation(.easeInOut(duration: 0.3), value: isSearchActive)
                 
-                // Затемненный фон при активном поиске
-                if isSearchFocused {
+                // Контент
+                VStack(spacing: 0) {
+                    // Поисковая строка
+                    HStack(spacing: 12) {
+                        HStack {
+                            Image(systemName: "magnifyingglass")
+                                .foregroundColor(.gray)
+                                .font(.system(size: 17))
+                            
+                            TextField("Поиск манги", text: $searchText)
+                                .textFieldStyle(PlainTextFieldStyle())
+                                .autocorrectionDisabled(true)
+                                .textInputAutocapitalization(.never)
+                                .focused($isTextFieldFocused)
+                                .onChange(of: isTextFieldFocused) { oldValue, newValue in
+                                    withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
+                                        isSearchActive = newValue
+                                    }
+                                }
+                            
+                            if !searchText.isEmpty {
+                                Button(action: {
+                                    searchText = ""
+                                }) {
+                                    Image(systemName: "xmark.circle.fill")
+                                        .foregroundColor(.gray)
+                                        .font(.system(size: 15))
+                                }
+                            }
+                        }
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 10)
+                        .background(Color(red: 38/255, green: 38/255, blue: 38/255))
+                        .cornerRadius(12)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 12)
+                                .stroke(isTextFieldFocused ? Color(red: 239/255, green: 191/255, blue: 4/255) : Color.clear, lineWidth: 1)
+                        )
+                        
+                        if isSearchActive {
+                            Button("Отмена") {
+                                withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
+                                    isSearchActive = false
+                                    isTextFieldFocused = false
+                                    searchText = ""
+                                }
+                            }
+                            .foregroundColor(Color(red: 239/255, green: 191/255, blue: 4/255))
+                            .transition(.move(edge: .trailing).combined(with: .opacity))
+                        }
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.top, 8)
+                    .padding(.bottom, 8)
+                    .background(Color(red: 28/255, green: 28/255, blue: 28/255))
+                    
+                    // Основной контент
+                    if let error = service.errorMessage {
+                        errorView(error)
+                    } else if service.isLoading && service.mangas.isEmpty {
+                        loadingView
+                    } else {
+                        mangaListView
+                    }
+                }
+                
+                // Затемненный фон для закрытия поиска
+                if isSearchActive {
                     Color.black.opacity(0.3)
                         .ignoresSafeArea()
                         .onTapGesture {
-                            isSearchFocused = false
-                            searchText = ""
+                            withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
+                                isSearchActive = false
+                                isTextFieldFocused = false
+                                searchText = ""
+                            }
                         }
-                        .transition(.opacity)
-                        .animation(.easeInOut(duration: 0.2), value: isSearchFocused)
+                        .zIndex(-1)
                 }
             }
             .navigationTitle("Манга")
             .navigationBarTitleDisplayMode(.large)
             .preferredColorScheme(.dark)
             .toolbarBackground(.hidden, for: .navigationBar)
-            .searchable(
-                text: $searchText,
-                placement: .navigationBarDrawer(displayMode: .always),
-                prompt: "Поиск манги"
-            )
-            // Отключаем автокоррекцию и автокапитализацию
-            .autocorrectionDisabled(true)
-            .textInputAutocapitalization(.never)
-            .onSubmit(of: .search) {
-                isSearchFocused = false
-            }
-            // Настраиваем клавиатуру
-            .toolbar {
-                ToolbarItemGroup(placement: .keyboard) {
-                    Spacer()
-                    Button("Готово") {
-                        isSearchFocused = false
-                    }
-                    .foregroundColor(Color(red: 239/255, green: 191/255, blue: 4/255))
-                }
-            }
         }
         .task {
             service.loadMangas(reset: true)
         }
-        .onTapGesture {
-            isSearchFocused = false
-        }
-        // Отслеживаем появление/исчезновение клавиатуры
         .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)) { notification in
             if let keyboardFrame = notification.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] as? CGRect {
                 withAnimation(.easeInOut(duration: 0.25)) {
@@ -81,22 +128,6 @@ struct MangaFeedView: View {
             withAnimation(.easeInOut(duration: 0.25)) {
                 keyboardHeight = 0
             }
-        }
-    }
-    
-    private var backgroundView: some View {
-        Color(red: 28/255, green: 28/255, blue: 28/255)
-            .ignoresSafeArea()
-    }
-    
-    @ViewBuilder
-    private var contentView: some View {
-        if let error = service.errorMessage {
-            errorView(error)
-        } else if service.isLoading && service.mangas.isEmpty {
-            loadingView
-        } else {
-            mangaListView
         }
     }
     
@@ -129,6 +160,8 @@ struct MangaFeedView: View {
             LazyVStack(spacing: 16) {
                 ForEach(filteredMangas) { manga in
                     MangaRowView(manga: manga, general: general)
+                        .opacity(isSearchActive ? 0.5 : 1)
+                        .animation(.easeInOut(duration: 0.3), value: isSearchActive)
                         .onAppear {
                             if manga.id == service.mangas.last?.id && service.hasMore && !service.isLoading && searchText.isEmpty {
                                 service.loadMangas(reset: false)
@@ -144,11 +177,11 @@ struct MangaFeedView: View {
             }
             .padding(.horizontal, 16)
             .padding(.vertical, 8)
-            .padding(.bottom, isSearchFocused ? keyboardHeight : 0)
-            .animation(.easeInOut(duration: 0.25), value: isSearchFocused)
+            .padding(.bottom, keyboardHeight)
         }
         .refreshable {
             service.loadMangas(reset: true)
         }
+        .scrollDisabled(isSearchActive)
     }
 }

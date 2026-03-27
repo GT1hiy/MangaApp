@@ -26,7 +26,7 @@ struct NotifPage: View {
                     Text("У вас сейчас нет уведомлений")
                         .font(.title2)
                         .fontWeight(.semibold)
-                        .foregroundColor(.white)
+                        .foregroundColor(.gray)
                         .multilineTextAlignment(.center)
                     
                     Text("Когда появятся новые уведомления, они отобразятся здесь")

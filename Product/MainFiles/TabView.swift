@@ -22,7 +22,7 @@ struct MainTabView: View {
                     FavoritePage(general: general)
                 case 2:
                     if general.exit {
-                    LoginPage(general: general)
+                        LoginPage(general: general)
                     } else {
                         if general.reg {
                             RegistrationPage(general: general)
@@ -30,6 +30,7 @@ struct MainTabView: View {
                             RegPage(general: general)
                         }
                     }
+
                 case 3:
                     NotifPage(general: general)
                 default:
@@ -181,13 +182,10 @@ struct MainTabView: View {
             }
         }
         .withSideMenu(general: general) {
-                   // Действие при выходе
-                   general.exit = false
-                   general.userEmail = ""
-                   general.welcomeMessage = ""
-                   general.reg = false
-                   showLogoutAlert = true
-               }
+            // Используем метод logout вместо ручной очистки
+            general.logout()
+            showLogoutAlert = true
+        }
         .alert("Выход", isPresented: $showLogoutAlert) {
             Button("OK", role: .cancel) {
             }

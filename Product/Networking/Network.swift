@@ -41,6 +41,7 @@ class MangaService: ObservableObject {
                   title {
                     romaji
                     english
+                    native
                   }
                   description(asHtml: false)
                   coverImage {
@@ -100,36 +101,6 @@ class MangaService: ObservableObject {
             }
         }
     }
-    
-    func searchMangaDexId(title: String) async -> String? {
-        let encodedTitle = title.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
-        let urlString = "https://api.mangadex.org/manga?title=\(encodedTitle)&limit=1"
-        
-        guard let url = URL(string: urlString) else { return nil }
-        
-        var request = URLRequest(url: url)
-        request.setValue("MangaReader/1.0 (iOS)", forHTTPHeaderField: "User-Agent")
-        request.timeoutInterval = 15
-        
-        do {
-            let (data, _) = try await URLSession.shared.data(for: request)
-            
-            struct SearchResponse: Codable {
-                let data: [MangaDexManga]
-            }
-            
-            struct MangaDexManga: Codable {
-                let id: String
-            }
-            
-            let response = try JSONDecoder().decode(SearchResponse.self, from: data)
-            return response.data.first?.id
-            
-        } catch {
-            print("Ошибка поиска ID: \(error)")
-            return nil
-        }
-    }
 }
 
 // MARK: - Models
@@ -160,7 +131,7 @@ struct Manga: Codable, Identifiable {
     let volumes: Int?
     
     var displayTitle: String {
-        title.english ?? title.romaji ?? "Unknown"
+        title.english ?? title.romaji ?? title.native ?? "Unknown"
     }
     
     var displayDescription: String {
@@ -184,6 +155,7 @@ struct Manga: Codable, Identifiable {
 struct Title: Codable {
     let romaji: String?
     let english: String?
+    let native: String?
 }
 
 struct CoverImage: Codable {

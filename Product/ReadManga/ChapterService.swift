@@ -13,10 +13,10 @@ class ChapterService: ObservableObject {
     private let apiURL = "https://api.mangadex.org"
     
     private let imageDomains = [
+        "https://uploads.mangadex.org",
         "https://mangadex.org",
         "https://mangadex.cc",
         "https://mangadex.network",
-        "https://uploads.mangadex.org",
         "https://cdn.mangadex.org"
     ]
     
@@ -46,7 +46,8 @@ class ChapterService: ObservableObject {
             URLQueryItem(name: "translatedLanguage[]", value: "ru"),
             URLQueryItem(name: "translatedLanguage[]", value: "en"),
             URLQueryItem(name: "order[chapter]", value: "asc"),
-            URLQueryItem(name: "limit", value: "500")
+            URLQueryItem(name: "limit", value: "500"),
+            URLQueryItem(name: "includes[]", value: "scanlation_group")
         ]
         
         guard let url = components?.url else {
@@ -75,6 +76,7 @@ class ChapterService: ObservableObject {
     func loadPages(chapterId: String) async {
         isLoading = true
         pages = []
+        errorMessage = nil
         
         let urlString = "\(apiURL)/at-home/server/\(chapterId)"
         
@@ -94,9 +96,23 @@ class ChapterService: ObservableObject {
             
             print("Глава: hash=\(response.chapter.hash), страниц=\(response.chapter.data.count)")
             
+            // Пробуем загрузить страницы через выбранное зеркало
             let baseUrl = imageDomains[currentImageDomainIndex]
-            let imageUrls = response.chapter.data.map { fileName in
+            var imageUrls = response.chapter.data.map { fileName in
                 URL(string: "\(baseUrl)/data/\(response.chapter.hash)/\(fileName)")!
+            }
+            
+            // Если не загрузились через основное зеркало, пробуем через альтернативные
+            if imageUrls.isEmpty {
+                for domain in imageDomains {
+                    let altUrls = response.chapter.data.map { fileName in
+                        URL(string: "\(domain)/data/\(response.chapter.hash)/\(fileName)")!
+                    }
+                    imageUrls = altUrls
+                    if !imageUrls.isEmpty {
+                        break
+                    }
+                }
             }
             
             pages = imageUrls

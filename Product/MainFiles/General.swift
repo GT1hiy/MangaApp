@@ -10,4 +10,16 @@ class General: ObservableObject {
     func exitFromAcc() {
         exit = false
     }
+    
+    func logout() {
+        exit = false
+        userEmail = ""
+        welcomeMessage = ""
+        reg = false
+        
+        // Очищаем избранное асинхронно на главном потоке
+        Task { @MainActor in
+            FavoriteManager.shared.clearFavorites()
+        }
+    }
 }

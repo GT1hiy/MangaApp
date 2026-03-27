@@ -4,11 +4,13 @@ struct MangaDetailView: View {
     let manga: Manga
     let general: General
     @State private var showingReader = false
-    @State private var mangaDexId: String?
+    @State private var mangaSourceId: String?
+    @State private var currentSource: MangaSource?
     @State private var isSearching = false
     @State private var searchError: String?
     @State private var isFavorite = false
     @State private var showAuthAlert = false
+    @State private var sourceName: String = ""
     
     var body: some View {
         ZStack {
@@ -19,13 +21,31 @@ struct MangaDetailView: View {
                 VStack(alignment: .leading, spacing: 20) {
                     coverImage
                     infoSection
+                    
+                    if !sourceName.isEmpty {
+                        HStack {
+                            Text("Источник:")
+                                .font(.caption)
+                                .foregroundColor(.gray)
+                            Text(sourceName)
+                                .font(.caption)
+                                .foregroundColor(Color(red: 239/255, green: 191/255, blue: 4/255))
+                            Spacer()
+                        }
+                        .padding(.horizontal)
+                        .padding(.top, -10)
+                    }
                 }
             }
         }
         .navigationBarTitleDisplayMode(.inline)
         .sheet(isPresented: $showingReader) {
-            if let id = mangaDexId {
-                ReaderView(mangaId: id, mangaTitle: manga.displayTitle)
+            if let id = mangaSourceId, let source = currentSource {
+                UnifiedReaderView(
+                    mangaTitle: manga.displayTitle,
+                    source: source,
+                    mangaId: id
+                )
             }
         }
         .alert("Вход в аккаунт", isPresented: $showAuthAlert) {
@@ -109,7 +129,6 @@ struct MangaDetailView: View {
             Spacer()
             
             Button(action: {
-                // Исправляем условие - проверяем general.exit (true - авторизован)
                 if general.exit {
                     toggleFavorite()
                 } else {
@@ -221,15 +240,29 @@ struct MangaDetailView: View {
     private func openReader() async {
         isSearching = true
         searchError = nil
+        sourceName = ""
         
-        let searchTitle = manga.title.english ?? manga.title.romaji ?? manga.displayTitle
+        let searchTitles = [
+            manga.title.english,
+            manga.title.romaji,
+            manga.title.native,
+            manga.displayTitle
+        ].compactMap { $0 }
         
-        let service = MangaService()
-        if let id = await service.searchMangaDexId(title: searchTitle) {
-            mangaDexId = id
-            showingReader = true
-        } else {
-            searchError = "Не удалось найти эту мангу в MangaDex"
+        let manager = MangaSourceManager.shared
+        
+        for title in searchTitles {
+            if let (source, id) = await manager.findManga(title: title) {
+                currentSource = source
+                mangaSourceId = id
+                sourceName = source.name
+                showingReader = true
+                break
+            }
+        }
+        
+        if mangaSourceId == nil {
+            searchError = "Не удалось найти мангу.\nПопробуйте позже или проверьте название"
         }
         
         isSearching = false
